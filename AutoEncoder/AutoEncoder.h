@@ -26,7 +26,7 @@ private:
 public:
 	AutoEncoder(const Mat_<double>& data, int hiddenSize);
 
-	Updates train(double lambda, double beta);
+	Updates train(double lambda, double beta, double sparsityParam);
 	void update(const Updates& updates, double eta);
 	void visualize(char* filename);
 	Mat_<double> computeNumericalGradient(double (*func)(const Mat_<double>& x), const Mat_<double>& x);
