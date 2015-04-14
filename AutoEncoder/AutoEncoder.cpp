@@ -98,7 +98,7 @@ void AutoEncoder::visualize(char* filename) {
 	// 平均を引く
 	Mat_<double> X = W1 - mat_avg(W1);
 
-	Mat_<uchar> img((size + 1) * n + 1, (size + 1) * n + 1, 127);
+	Mat_<uchar> img = Mat_<uchar>::zeros((size + 1) * n + 1, (size + 1) * n + 1);
 
 	for (int r = 0; r < n; ++r) {
 		for (int c = 0; c < n; ++c) {
