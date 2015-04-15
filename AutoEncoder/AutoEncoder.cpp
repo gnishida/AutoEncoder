@@ -54,20 +54,11 @@ void AutoEncoder::visualize(char* filename) {
 			// index番目の行を取得する
 			Mat_<double> tmp = X.row(index);
 
-			// 最大、最小値を取得する
-			double max_val = mat_max(tmp);
-			double min_val = mat_min(tmp);
-
-			/*
-			// 値が[0,255]の範囲になるよう、変換する
-			Mat_<uchar> tmp2;
-			double alpha = 255.0 / (max_val - min_val);
-			double beta = -min_val * alpha;
-			tmp.convertTo(tmp2, CV_8U, alpha, beta);
-			*/
+			// 絶対値の最大を取得する
+			double max_val = mat_max(cv::abs(tmp));
 
 			// 最大値でわる
-			tmp = tmp / max_val * 255;
+			tmp = (tmp / max_val + 1) * 127;
 
 			for (int r2 = 0; r2 < size; ++r2) {
 				for (int c2 = 0; c2 < size; ++c2) {

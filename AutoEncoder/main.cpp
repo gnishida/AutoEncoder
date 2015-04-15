@@ -137,7 +137,7 @@ int main() {
 		0.0001, // lambda
 		3,		// beta
 		0.01,	// sparsityParam
-		0.4		// learningRate
+		1.0		// learningRate
 		);
 
 	return 0;
