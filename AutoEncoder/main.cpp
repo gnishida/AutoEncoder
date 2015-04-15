@@ -84,9 +84,10 @@ void sampleIMAGES(vector<Mat_<double> >& imgs, int num_patches, int patchsize, M
 	// 標準偏差を計算
 	Scalar mean, stddev;
 	meanStdDev(X, mean, stddev);
+	double pstd = stddev.val[0] * sqrt((X.rows * X.cols) / (double)(X.rows * X.cols - 1)) * 3.0;
 
 	// 各列の値が[-1, 1]の範囲になるようnormalizeする
-	X = cv::max(cv::min(X, stddev.val[0] * 3.0), -stddev.val[0] * 3.0) / stddev.val[0] / 3.0;
+	X = cv::max(cv::min(X, pstd), -pstd) / pstd;
 
 	// [0.1,0.9]の範囲になるようnormalizeする
 	X = (X + 1.0) * 0.4 + 0.1;
@@ -106,6 +107,22 @@ void test(int numpatches, int patchsize, int hiddenSize, int maxIter, double lam
 	AutoEncoder ae(X, hiddenSize);
 	for (int iter = 0; iter < maxIter; ++iter) {
 		Updates updates = ae.train(lambda, beta, sparsityParam);
+		
+		/*
+		Updates numUpdates = ae.computeNumericalGradient(lambda, beta, sparsityParam);
+		cout << updates.dW1 << endl;
+		cout << numUpdates.dW1 << endl;
+
+		cout << updates.dW2 << endl;
+		cout << numUpdates.dW2 << endl;
+
+		cout << updates.db1 << endl;
+		cout << numUpdates.db1 << endl;
+
+		cout << updates.db2 << endl;
+		cout << numUpdates.db2 << endl;
+		*/
+
 		ae.update(updates, learningRate);
 		cout << iter << ": cost=" << updates.cost << endl;
 	}

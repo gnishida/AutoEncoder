@@ -29,9 +29,10 @@ public:
 	Updates train(double lambda, double beta, double sparsityParam);
 	void update(const Updates& updates, double eta);
 	void visualize(char* filename);
-	Mat_<double> computeNumericalGradient(double (*func)(const Mat_<double>& x), const Mat_<double>& x);
+	Updates AutoEncoder::computeNumericalGradient(double lambda, double beta, double sparsityParam);
 
 private:
+	Updates sparseEncoderCost(const Mat_<double>& W1, const Mat_<double>& W2, const Mat_<double>& b1, const Mat_<double>& b2, double lambda, double beta, double sparsityParam);
 	Mat_<double> sigmoid(const Mat_<double>& z);
 	double mat_sum(const Mat_<double>& m);
 	double mat_avg(const Mat_<double>& m);

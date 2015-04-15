@@ -24,62 +24,7 @@ AutoEncoder::AutoEncoder(const Mat_<double>& data, int hiddenSize) : data(data),
  * @return			コスト
  */
 Updates AutoEncoder::train(double lambda, double beta, double sparsityParam) {
-	Updates updates;
-	updates.cost = 0.0f;
-	updates.dW1 = Mat_<double>::zeros(hiddenSize, visibleSize);
-	updates.dW2 = Mat_<double>::zeros(visibleSize, hiddenSize);
-	updates.db1 = Mat_<double>::zeros(hiddenSize, 1);
-	updates.db2 = Mat_<double>::zeros(visibleSize, 1);
-
-	// forward pass
-	Mat_<double> rho_hat = Mat_<double>::zeros(hiddenSize, 1);
-	Mat_<double> a2(hiddenSize, M);
-	Mat_<double> a3(visibleSize, M);
-
-	for (int m = 0; m < M; ++m) {
-		Mat_<double> a2_m(a2, cv::Rect(m, 0, 1, a2.rows));
-		Mat_<double> tmp = sigmoid(W1 * data.col(m) + b1);
-		tmp.copyTo(a2_m);
-
-		Mat_<double> a3_m(a3, cv::Rect(m, 0, 1, a3.rows));
-		tmp = sigmoid(W2 * a2_m + b2);
-		tmp.copyTo(a3_m);
-
-		rho_hat += a2_m;
-
-		updates.cost += mat_sum((a3_m - data.col(m)).mul(a3_m - data.col(m))) * 0.5;
-	}
-	rho_hat /= M;
-
-	// back propagation
-	for (int m = 0; m < M; ++m) {
-		Mat_<double> delta3 = -(data.col(m) - a3.col(m)).mul(a3.col(m)).mul(1 - a3.col(m));
-		Mat_<double> delta2 = (W2.t() * delta3 + beta * (-sparsityParam / rho_hat + (1-sparsityParam) / (1-rho_hat))).mul(a2.col(m)).mul(1 - a2.col(m));
-
-		updates.dW1 += delta2 * data.col(m).t();
-		updates.dW2 += delta3 * a2.col(m).t();
-		updates.db1 += delta2;
-		updates.db2 += delta3;
-	}
-
-	updates.dW1 = updates.dW1 / M + lambda * W1;
-	updates.dW2 = updates.dW2 / M + lambda * W2;
-	updates.db1 /= M;
-	updates.db2 /= M;
-
-	updates.cost /= M;
-	updates.cost += lambda * 0.5 * (mat_sum(W1.mul(W1)) + mat_sum(W2.mul(W2)));
-
-	// sparsity penalty
-	Mat log1, log2;
-	cv::log(sparsityParam / rho_hat, log1);
-	log1 /= exp(1.0);
-	cv::log((1-sparsityParam) / (1 - rho_hat), log2);
-	log2 /= exp(1.0);
-
-	updates.cost += beta * mat_sum(sparsityParam * log1 + (1-sparsityParam) * log2);
-
-	return updates;
+	return sparseEncoderCost(W1, W2, b1, b2, lambda, beta, sparsityParam);
 }
 
 void AutoEncoder::update(const Updates& updates, double eta) {
@@ -146,18 +91,116 @@ void AutoEncoder::visualize(char* filename) {
  * @param x			このポイントにおける勾配を計算する（xは、行ベクトルであること！）
  * @return			勾配ベクトル
  */
-Mat_<double> AutoEncoder::computeNumericalGradient(double (*func)(const Mat_<double>& x), const Mat_<double>& x) {
-	Mat_<double> ret(x.size());
+Updates AutoEncoder::computeNumericalGradient(double lambda, double beta, double sparsityParam) {
+	Updates updates;
+	updates.dW1 = Mat_<double>(W1.size());
+	updates.dW2 = Mat_<double>(W2.size());
+	updates.db1 = Mat_<double>(b1.size());
+	updates.db2 = Mat_<double>(b2.size());
+
 	double e = 0.0001;
 
-	for (int c = 0; c < x.cols; ++c) {
-		Mat_<double> x2 = Mat_<double>::zeros(x.size());
-		x2(0, c) = e;
+	for (int r = 0; r < W1.rows; ++r) {
+		for (int c = 0; c < W1.cols; ++c) {
+			Mat_<double> dW1 = Mat_<double>::zeros(W1.size());
+			dW1(r, c) = e;
 
-		ret(0, c) = (func(x + x2) - func(x - x2)) / e / 2.0;
+			Updates u1 = sparseEncoderCost(W1 + dW1, W2, b1, b2, lambda, beta, sparsityParam);
+			Updates u2 = sparseEncoderCost(W1 - dW1, W2, b1, b2, lambda, beta, sparsityParam);
+			updates.dW1(r, c) = (u1.cost - u2.cost) / e / 2.0;
+		}
 	}
 
-	return ret;
+	for (int r = 0; r < W2.rows; ++r) {
+		for (int c = 0; c < W2.cols; ++c) {
+			Mat_<double> dW2 = Mat_<double>::zeros(W2.size());
+			dW2(r, c) = e;
+
+			Updates u1 = sparseEncoderCost(W1, W2 + dW2, b1, b2, lambda, beta, sparsityParam);
+			Updates u2 = sparseEncoderCost(W1, W2 - dW2, b1, b2, lambda, beta, sparsityParam);
+			updates.dW2(r, c) = (u1.cost - u2.cost) / e / 2.0;
+		}
+	}
+
+	for (int r = 0; r < b1.rows; ++r) {
+		Mat_<double> db1 = Mat_<double>::zeros(b1.size());
+		db1(r, 0) = e;
+
+		Updates u1 = sparseEncoderCost(W1, W2, b1 + db1, b2, lambda, beta, sparsityParam);
+		Updates u2 = sparseEncoderCost(W1, W2, b1 - db1, b2, lambda, beta, sparsityParam);
+		updates.db1(r, 0) = (u1.cost - u2.cost) / e / 2.0;
+	}
+
+	for (int r = 0; r < b2.rows; ++r) {
+		Mat_<double> db2 = Mat_<double>::zeros(b2.size());
+		db2(r, 0) = e;
+
+		Updates u1 = sparseEncoderCost(W1, W2, b1, b2 + db2, lambda, beta, sparsityParam);
+		Updates u2 = sparseEncoderCost(W1, W2, b1, b2 - db2, lambda, beta, sparsityParam);
+		updates.db2(r, 0) = (u1.cost - u2.cost) / e / 2.0;
+	}
+
+	return updates;
+}
+
+Updates AutoEncoder::sparseEncoderCost(const Mat_<double>& W1, const Mat_<double>& W2, const Mat_<double>& b1, const Mat_<double>& b2, double lambda, double beta, double sparsityParam) {
+	Updates updates;
+	updates.cost = 0.0f;
+	updates.dW1 = Mat_<double>::zeros(hiddenSize, visibleSize);
+	updates.dW2 = Mat_<double>::zeros(visibleSize, hiddenSize);
+	updates.db1 = Mat_<double>::zeros(hiddenSize, 1);
+	updates.db2 = Mat_<double>::zeros(visibleSize, 1);
+
+	// forward pass
+	Mat_<double> rho_hat = Mat_<double>::zeros(hiddenSize, 1);
+	Mat_<double> a2(hiddenSize, M);
+	Mat_<double> a3(visibleSize, M);
+
+	for (int m = 0; m < M; ++m) {
+		Mat_<double> a2_m(a2, cv::Rect(m, 0, 1, a2.rows));
+		Mat_<double> tmp = sigmoid(W1 * data.col(m) + b1);
+		tmp.copyTo(a2_m);
+
+		Mat_<double> a3_m(a3, cv::Rect(m, 0, 1, a3.rows));
+		tmp = sigmoid(W2 * a2_m + b2);
+		tmp.copyTo(a3_m);
+
+		rho_hat += a2_m;
+
+		updates.cost += mat_sum((a3_m - data.col(m)).mul(a3_m - data.col(m))) * 0.5;
+	}
+	rho_hat /= M;
+
+	// back propagation
+	for (int m = 0; m < M; ++m) {
+		Mat_<double> delta3 = -(data.col(m) - a3.col(m)).mul(a3.col(m)).mul(1 - a3.col(m));
+		Mat_<double> delta2 = (W2.t() * delta3 + beta * (-sparsityParam / rho_hat + (1-sparsityParam) / (1-rho_hat))).mul(a2.col(m)).mul(1 - a2.col(m));
+
+		updates.dW1 += delta2 * data.col(m).t();
+		updates.dW2 += delta3 * a2.col(m).t();
+		updates.db1 += delta2;
+		updates.db2 += delta3;
+	}
+
+	updates.dW1 = updates.dW1 / M + lambda * W1;
+	updates.dW2 = updates.dW2 / M + lambda * W2;
+	updates.db1 /= M;
+	updates.db2 /= M;
+
+	updates.cost /= M;
+
+	updates.cost += lambda * 0.5 * (mat_sum(W1.mul(W1)) + mat_sum(W2.mul(W2)));
+
+	// sparsity penalty
+	Mat log1, log2;
+	cv::log(sparsityParam / rho_hat, log1);
+	//log1 /= exp(1.0);
+	cv::log((1-sparsityParam) / (1 - rho_hat), log2);
+	//log2 /= exp(1.0);
+
+	updates.cost += beta * mat_sum(sparsityParam * log1 + (1-sparsityParam) * log2);
+
+	return updates;
 }
 
 /**
