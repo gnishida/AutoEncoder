@@ -58,13 +58,6 @@ void sampleIMAGES(vector<Mat_<double> >& imgs, int num_patches, int patchsize, M
 			c0 = rand() % (imgs[img_id].cols - patchsize);
 		}
 
-		/* //Matlabがcolumn majorでreshapeするので、とりあえず、コメントアウトしておく。
-		for (int r = 0; r < patchsize; ++r) {
-			for (int c = 0; c < patchsize; ++c) {
-				X(r * patchsize + c, i) = imgs[img_id](r0 + r, c0 + c);
-			}
-		}
-		*/
 		for (int c = 0; c < patchsize; ++c) {
 			for (int r = 0; r < patchsize; ++r) {
 				X(c * patchsize + r, i) = imgs[img_id](r0 + r, c0 + c);
@@ -126,18 +119,21 @@ void test(int numpatches, int patchsize, int hiddenSize, int maxIter, double lam
 		ae.update(updates, learningRate);
 		cout << iter << ": cost=" << updates.cost << endl;
 	}
+
+	ae.debug();
+
 	ae.visualize("weights.png");
 }
 
 int main() {
-	test(10000, // numpatches
+	test(1000,//10000, // numpatches
 		8,		// patchsize
 		25,		// hiddenSize
-		400,	// maxIter
+		40000,//400,	// maxIter
 		0.0001, // lambda
 		3,		// beta
 		0.01,	// sparsityParam
-		1.0		// learningRate
+		1		// learningRate
 		);
 
 	return 0;

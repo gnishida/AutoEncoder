@@ -134,6 +134,13 @@ Updates AutoEncoder::computeNumericalGradient(double lambda, double beta, double
 	return updates;
 }
 
+void AutoEncoder::debug() {
+	cout << W1 << endl;
+	cout << W2 << endl;
+	cout << b1 << endl;
+	cout << b2 << endl;
+}
+
 Updates AutoEncoder::sparseEncoderCost(const Mat_<double>& W1, const Mat_<double>& W2, const Mat_<double>& b1, const Mat_<double>& b2, double lambda, double beta, double sparsityParam) {
 	Updates updates;
 	updates.cost = 0.0f;

@@ -30,6 +30,7 @@ public:
 	void update(const Updates& updates, double eta);
 	void visualize(char* filename);
 	Updates AutoEncoder::computeNumericalGradient(double lambda, double beta, double sparsityParam);
+	void debug();
 
 private:
 	Updates sparseEncoderCost(const Mat_<double>& W1, const Mat_<double>& W2, const Mat_<double>& b1, const Mat_<double>& b2, double lambda, double beta, double sparsityParam);
