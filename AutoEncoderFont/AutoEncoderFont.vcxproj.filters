@@ -63,6 +63,9 @@
     <ClCompile Include="AutoEncoder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MNISTLoader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\alglib-3.9.0\src\alglibinternal.h">
@@ -110,5 +113,13 @@
     <ClInclude Include="AutoEncoder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MNISTLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="images10000.idx3-ubyte">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

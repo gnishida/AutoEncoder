@@ -1,13 +1,13 @@
 ﻿#include "stdafx.h"
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
-#include "MNISTLoader.h"
 #include "DenoisingAutoencoder.h"
 #include "optimization.h"
 
 /**
  * images.datを読み込み、Denoising Autoencoderにより学習する。
  * inputレイヤからhiddenレイヤへの重みを画像として、weights.pngに保存する。
+ * どうも、結果がいまいち。実装が間違っている可能性がある。
  *
  * @author Gen Nishida
  * @date 4/16/2015

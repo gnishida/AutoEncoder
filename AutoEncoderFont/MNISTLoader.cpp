@@ -51,21 +51,11 @@ void MNISTLoader::saveFirstNImages(char* inputFileName, int outputNum, char* out
 	fclose(fp2);
 }
 
-void MNISTLoader::loadImages(char* filename, vector<Mat_<uchar> >& imgs, bool convertToBinary) {
+void MNISTLoader::loadImages(char* filename, vector<Mat_<double> >& imgs) {
 	unsigned char buff[255];
 	FILE* fp = fopen(filename, "rb");
 
-	int magic_number;
-	fread(&magic_number, 4, 1, fp);
-
-	int number_of_images;
-	fread(&number_of_images, 4, 1, fp);
-
-	int rows, cols;
-	fread(&rows, 4, 1, fp);
-	fread(&cols, 4, 1, fp);
-
-	/*fread(buff, 1, 4, fp);
+	fread(buff, 1, 4, fp);
 	int magic_number = BE2LE(buff);
 
 	fread(buff, 1, 4, fp);
@@ -75,7 +65,7 @@ void MNISTLoader::loadImages(char* filename, vector<Mat_<uchar> >& imgs, bool co
 	int rows = BE2LE(buff);
 	fread(buff, 1, 4, fp);
 	int cols = BE2LE(buff);
-	*/
+	
 	imgs.resize(number_of_images);
 
 	for (int i = 0; i < number_of_images; ++i) {
@@ -83,19 +73,11 @@ void MNISTLoader::loadImages(char* filename, vector<Mat_<uchar> >& imgs, bool co
 		unsigned char* data = new unsigned char[rows * cols];
 		fread(data, 1, rows * cols, fp);
 
-		cout << data[0] << endl;
-		cout << data[1] << endl;
-		cout << data[2] << endl;
-
 		// Matオブジェクトにコピー
 		imgs[i] = Mat_<uchar>(rows, cols);
 		for (int r = 0; r < rows; ++r) {
 			for (int c = 0; c < cols; ++c) {
-				if (convertToBinary) {
-					imgs[i](r, c) = data[r * cols + c] > 127 ? 1 : 0;
-				} else {
-					imgs[i](r, c) = data[r * cols + c];
-				}
+				imgs[i](r, c) = data[r * cols + c];
 			}
 		}
 	}

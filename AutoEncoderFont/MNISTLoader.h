@@ -17,7 +17,7 @@ protected:
 
 public:
 	static void saveFirstNImages(char* inputFileName, int outputNum, char* outputFileName);
-	static void loadImages(char* filename, vector<Mat_<uchar> >& imgs, bool convertToBinary);
+	static void loadImages(char* filename, vector<Mat_<double> >& imgs);
 
 private:
 	static int BE2LE(unsigned char* buff);

@@ -3,9 +3,10 @@
 #include <opencv/highgui.h>
 #include "AutoEncoder.h"
 #include "optimization.h"
+#include "MNISTLoader.h"
 
 /**
- * images.datを読み込み、Sparse Autoencoderにより学習する。
+ * images10000.idx3-ubyteを読み込み、Sparse Autoencoderにより学習する。
  * inputレイヤからhiddenレイヤへの重みを画像として、weights.pngに保存する。
  *
  * @author Gen Nishida
@@ -51,42 +52,6 @@ void function1_grad(const real_1d_array &x, double &func, real_1d_array &grad, v
 	vector<double> derivatives = ae->encodeDerivatives(updates);
 	for (int i = 0; i < derivatives.size(); ++i) {
 		grad[i] = derivatives[i];
-	}
-}
-
-/**
- * 指定されたデータファイルを読み込み、Matの配列を構築する。
- *
- * @param filename		データファイル名
- * @param imgs [OUT]	Matの配列
- */
-void loadImages(char* filename, vector<Mat_<double> >& imgs) {
-	FILE* fp = fopen(filename, "rb");
-
-	int magic_number;
-	fread(&magic_number, 4, 1, fp);
-
-	int number_of_images;
-	fread(&number_of_images, 4, 1, fp);
-
-	int rows, cols;
-	fread(&rows, 4, 1, fp);
-	fread(&cols, 4, 1, fp);
-
-	imgs.resize(number_of_images);
-
-	for (int i = 0; i < number_of_images; ++i) {
-		// 画像データを読み込む
-		float* data = new float[rows * cols];
-		fread(data, 4, rows * cols, fp);
-
-		// Matオブジェクトにコピー
-		imgs[i] = Mat_<uchar>(rows, cols);
-		for (int r = 0; r < rows; ++r) {
-			for (int c = 0; c < cols; ++c) {
-				imgs[i](r, c) = data[r * cols + c];
-			}
-		}
 	}
 }
 
@@ -144,7 +109,7 @@ void sampleIMAGES(vector<Mat_<double> >& imgs, int num_patches, int patchsize, M
 
 void test(int numpatches, int patchsize, int hiddenSize) {
 	vector<Mat_<double> > imgs;
-	loadImages("images.dat", imgs);
+	MNISTLoader::loadImages("images10000.idx3-ubyte", imgs);
 
 	Mat_<double> patches;
 	sampleIMAGES(imgs, numpatches, patchsize, patches);
