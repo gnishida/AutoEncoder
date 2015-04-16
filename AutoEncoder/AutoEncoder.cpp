@@ -1,4 +1,6 @@
 ﻿#include "AutoEncoder.h"
+#include <iostream>
+#include <sstream>
 
 
 AutoEncoder::AutoEncoder(const Mat_<double>& data, int hiddenSize) : data(data), hiddenSize(hiddenSize) {
@@ -25,6 +27,27 @@ AutoEncoder::AutoEncoder(const Mat_<double>& data, int hiddenSize) : data(data),
  */
 Updates AutoEncoder::train(double lambda, double beta, double sparsityParam) {
 	return sparseEncoderCost(W1, W2, b1, b2, lambda, beta, sparsityParam);
+}
+
+void AutoEncoder::decodeAndUpdate(const vector<double>& theta) {
+	int index = 0;
+
+	for (int c = 0; c < W1.cols; ++c) {
+		for (int r = 0; r < W1.rows; ++r) {
+			W1(r, c) = theta[index++];
+		}
+	}
+	for (int c = 0; c < W2.cols; ++c) {
+		for (int r = 0; r < W2.rows; ++r) {
+			W2(r, c) = theta[index++];
+		}
+	}
+	for (int r = 0; r < b1.rows; ++r) {
+		b1(r, 0) = theta[index++];
+	}
+	for (int r = 0; r < b2.rows; ++r) {
+		b2(r, 0) = theta[index++];
+	}
 }
 
 void AutoEncoder::update(const Updates& updates, double eta) {
@@ -132,6 +155,58 @@ Updates AutoEncoder::computeNumericalGradient(double lambda, double beta, double
 	}
 
 	return updates;
+}
+
+string AutoEncoder::encodeParams() {
+	ostringstream oss;
+
+	oss << "[";
+	for (int c = 0; c < W1.cols; ++c) {
+		for (int r = 0; r < W1.rows; ++r) {
+			oss << W1(r, c) << ",";
+		}
+	}
+	for (int c = 0; c < W2.cols; ++c) {
+		for (int r = 0; r < W2.rows; ++r) {
+			oss << W2(r, c) << ",";
+		}
+	}
+	for (int r = 0; r < b1.rows; ++r) {
+		oss << b1(r, 0) << ",";
+	}
+	for (int r = 0; r < b2.rows; ++r) {
+		oss << b2(r, 0);
+		if (r < b2.rows - 1) {
+			oss << ",";
+		}
+	}
+	oss << "]";
+
+	return oss.str();
+}
+
+vector<double> AutoEncoder::encodeDerivatives(const Updates& updates) {
+	vector<double> ret(W1.rows * W1.cols + W2.rows * W2.cols + b1.rows + b2.rows);
+	int index = 0;
+
+	for (int c = 0; c < W1.cols; ++c) {
+		for (int r = 0; r < W1.rows; ++r) {
+			ret[index++] = updates.dW1(r, c);
+		}
+	}
+	for (int c = 0; c < W2.cols; ++c) {
+		for (int r = 0; r < W2.rows; ++r) {
+			ret[index++] = updates.dW2(r, c);
+		}
+	}
+	for (int r = 0; r < b1.rows; ++r) {
+		ret[index++] = updates.db1(r, 0);
+	}
+	for (int r = 0; r < b2.rows; ++r) {
+		ret[index++] = updates.db2(r, 0);
+	}
+
+	return ret;
 }
 
 void AutoEncoder::debug() {

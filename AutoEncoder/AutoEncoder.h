@@ -27,9 +27,12 @@ public:
 	AutoEncoder(const Mat_<double>& data, int hiddenSize);
 
 	Updates train(double lambda, double beta, double sparsityParam);
+	void decodeAndUpdate(const vector<double>& theta);
 	void update(const Updates& updates, double eta);
 	void visualize(char* filename);
-	Updates AutoEncoder::computeNumericalGradient(double lambda, double beta, double sparsityParam);
+	Updates computeNumericalGradient(double lambda, double beta, double sparsityParam);
+	string encodeParams();
+	vector<double> encodeDerivatives(const Updates& updates);
 	void debug();
 
 private:
