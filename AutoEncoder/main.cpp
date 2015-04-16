@@ -16,6 +16,8 @@ double beta = 3;
 double sparsityParam = 0.01;
 
 void function1_grad(const real_1d_array &x, double &func, real_1d_array &grad, void *ptr)  {
+	static int count = 0;
+
 	// ベクトルのパラメータxを分解して、W、bなどを更新する
 	vector<double> vec_x(x.length());
 	for (int i = 0; i < x.length(); ++i) {
@@ -26,20 +28,14 @@ void function1_grad(const real_1d_array &x, double &func, real_1d_array &grad, v
 	// W、bなどに基づいて、costと偏微分を計算する
 	Updates updates = ae->train(lambda, beta, sparsityParam);
 
-    //
-    // 関数の値を計算する： f(x0,x1) = 100*(x0+3)^4 + (x1-3)^4 + (x2+1)^2
-    // また、偏微分も計算する：df/dx0, df/dx1, df/dx2
-    //
     func = updates.cost;
+	printf("%d: Cost = %lf\n", count++, updates.cost);
+
+    // 偏微分をgradに格納する
 	vector<double> derivatives = ae->encodeDerivatives(updates);
 	for (int i = 0; i < derivatives.size(); ++i) {
 		grad[i] = derivatives[i];
 	}
-	/*
-    grad[0] = 400*pow(x[0]+3,3);
-    grad[1] = 4*pow(x[1]-3,3);
-	grad[2] = 2*(x[2]+1);
-	*/
 }
 
 /**
@@ -127,7 +123,6 @@ void test(int numpatches, int patchsize, int hiddenSize) {
 	//MNISTLoader::saveFirstNImages("train-images.idx3-ubyte", 10000, "images10000.idx3-ubyte");
 
 	vector<Mat_<double> > imgs;
-	//MNISTLoader::loadImages("images10000.idx3-ubyte", imgs, false);
 	loadImages("images.dat", imgs);
 
 	Mat_<double> patches;
@@ -136,7 +131,7 @@ void test(int numpatches, int patchsize, int hiddenSize) {
 	ae = new AutoEncoder(patches, hiddenSize);
 
 	// BFGSを使って最適化
-    real_1d_array x = ae->encodeParams().c_str();//"[0,0,0]";		// 初期値
+    real_1d_array x = ae->encodeParams().c_str();	// 初期値
 
     double epsg = 0.0000000001;
     double epsf = 0;
@@ -160,7 +155,7 @@ void test(int numpatches, int patchsize, int hiddenSize) {
 }
 
 int main() {
-	test(1000,//10000, // numpatches
+	test(10000, // numpatches
 		8,		// patchsize
 		25		// hiddenSize
 		);
