@@ -3,6 +3,10 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AutoEncoder", "AutoEncoder\AutoEncoder.vcxproj", "{DCFFCC0D-00CF-4CFC-8BEC-7D5757759AD3}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DenoisingAutoencoder", "DenoisingAutoencoder\DenoisingAutoencoder.vcxproj", "{B176297A-2458-4E79-A320-7D61EA007676}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AutoEncoderFont", "AutoEncoderFont\AutoEncoderFont.vcxproj", "{7681A965-6CD6-4293-B548-0F5818727632}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -19,6 +23,22 @@ Global
 		{DCFFCC0D-00CF-4CFC-8BEC-7D5757759AD3}.Release|Win32.Build.0 = Release|Win32
 		{DCFFCC0D-00CF-4CFC-8BEC-7D5757759AD3}.Release|x64.ActiveCfg = Release|x64
 		{DCFFCC0D-00CF-4CFC-8BEC-7D5757759AD3}.Release|x64.Build.0 = Release|x64
+		{B176297A-2458-4E79-A320-7D61EA007676}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B176297A-2458-4E79-A320-7D61EA007676}.Debug|Win32.Build.0 = Debug|Win32
+		{B176297A-2458-4E79-A320-7D61EA007676}.Debug|x64.ActiveCfg = Debug|x64
+		{B176297A-2458-4E79-A320-7D61EA007676}.Debug|x64.Build.0 = Debug|x64
+		{B176297A-2458-4E79-A320-7D61EA007676}.Release|Win32.ActiveCfg = Release|Win32
+		{B176297A-2458-4E79-A320-7D61EA007676}.Release|Win32.Build.0 = Release|Win32
+		{B176297A-2458-4E79-A320-7D61EA007676}.Release|x64.ActiveCfg = Release|x64
+		{B176297A-2458-4E79-A320-7D61EA007676}.Release|x64.Build.0 = Release|x64
+		{7681A965-6CD6-4293-B548-0F5818727632}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7681A965-6CD6-4293-B548-0F5818727632}.Debug|Win32.Build.0 = Debug|Win32
+		{7681A965-6CD6-4293-B548-0F5818727632}.Debug|x64.ActiveCfg = Debug|x64
+		{7681A965-6CD6-4293-B548-0F5818727632}.Debug|x64.Build.0 = Debug|x64
+		{7681A965-6CD6-4293-B548-0F5818727632}.Release|Win32.ActiveCfg = Release|Win32
+		{7681A965-6CD6-4293-B548-0F5818727632}.Release|Win32.Build.0 = Release|Win32
+		{7681A965-6CD6-4293-B548-0F5818727632}.Release|x64.ActiveCfg = Release|x64
+		{7681A965-6CD6-4293-B548-0F5818727632}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

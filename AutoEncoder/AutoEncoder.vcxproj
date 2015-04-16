@@ -128,7 +128,6 @@
     <ClCompile Include="..\alglib-3.9.0\src\statistics.cpp" />
     <ClCompile Include="AutoEncoder.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="MNISTLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\alglib-3.9.0\src\alglibinternal.h" />
@@ -146,7 +145,6 @@
     <ClInclude Include="..\alglib-3.9.0\src\statistics.h" />
     <ClInclude Include="..\alglib-3.9.0\src\stdafx.h" />
     <ClInclude Include="AutoEncoder.h" />
-    <ClInclude Include="MNISTLoader.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

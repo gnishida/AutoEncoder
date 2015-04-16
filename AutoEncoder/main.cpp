@@ -1,9 +1,16 @@
 ﻿#include "stdafx.h"
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
-#include "MNISTLoader.h"
 #include "AutoEncoder.h"
 #include "optimization.h"
+
+/**
+ * images.datを読み込み、Sparse Autoencoderにより学習する。
+ * inputレイヤからhiddenレイヤへの重みを画像として、weights.pngに保存する。
+ *
+ * @author Gen Nishida
+ * @date 4/16/2015
+ */
 
 using namespace std;
 using namespace cv;
@@ -15,6 +22,15 @@ double lambda = 0.0001;
 double beta = 3;
 double sparsityParam = 0.01;
 
+/**
+ * L-BFGSから呼ばれる関数。
+ * コスト関数の値と、勾配ベクトルを返却する。
+ *
+ * @param x				変数ベクトル
+ * @param func [OUT]	コスト関数の値
+ * @param grad [OUT]	勾配ベクトル
+ * @param ptr
+ */
 void function1_grad(const real_1d_array &x, double &func, real_1d_array &grad, void *ptr)  {
 	static int count = 0;
 
@@ -39,12 +55,11 @@ void function1_grad(const real_1d_array &x, double &func, real_1d_array &grad, v
 }
 
 /**
- * 関数x1^2 + 3*x1*x2の勾配を返却する。
+ * 指定されたデータファイルを読み込み、Matの配列を構築する。
+ *
+ * @param filename		データファイル名
+ * @param imgs [OUT]	Matの配列
  */
-double simpleQuadraticFunction(const Mat_<double>& x) {
-	return x(0, 0) * x(0, 0) + x(0, 0) * x(0, 1) * 3.0;
-}
-
 void loadImages(char* filename, vector<Mat_<double> >& imgs) {
 	FILE* fp = fopen(filename, "rb");
 
@@ -75,6 +90,14 @@ void loadImages(char* filename, vector<Mat_<double> >& imgs) {
 	}
 }
 
+/**
+ * 指定された画像リストから、指定された数のパッチを作成する。
+ *
+ * @param imgs			画像リスト
+ * @param num_patches	パッチの数
+ * @param patchsize		パッチサイズ（一辺のサイズ）
+ * @param X [OUT]		パッチ（各列が1つのパッチを表す。各パッチは、column majorで1列にする。）
+ */
 void sampleIMAGES(vector<Mat_<double> >& imgs, int num_patches, int patchsize, Mat_<double>& X) {
 	X = Mat_<float>(patchsize * patchsize, num_patches);
 
@@ -90,6 +113,7 @@ void sampleIMAGES(vector<Mat_<double> >& imgs, int num_patches, int patchsize, M
 			c0 = rand() % (imgs[img_id].cols - patchsize);
 		}
 
+		// column majorで、パッチを1列にして格納する
 		for (int c = 0; c < patchsize; ++c) {
 			for (int r = 0; r < patchsize; ++r) {
 				X(c * patchsize + r, i) = imgs[img_id](r0 + r, c0 + c);
@@ -119,9 +143,6 @@ void sampleIMAGES(vector<Mat_<double> >& imgs, int num_patches, int patchsize, M
 }
 
 void test(int numpatches, int patchsize, int hiddenSize) {
-	// 以下の行は、最初に１回だけ、小さいデータセットを作成するために必要。
-	//MNISTLoader::saveFirstNImages("train-images.idx3-ubyte", 10000, "images10000.idx3-ubyte");
-
 	vector<Mat_<double> > imgs;
 	loadImages("images.dat", imgs);
 
@@ -136,7 +157,7 @@ void test(int numpatches, int patchsize, int hiddenSize) {
     double epsg = 0.0000000001;
     double epsf = 0;
     double epsx = 0;
-    ae_int_t maxits = 0;
+    ae_int_t maxits = 400;
     minlbfgsstate state;
     minlbfgsreport rep;
 
@@ -145,9 +166,22 @@ void test(int numpatches, int patchsize, int hiddenSize) {
     alglib::minlbfgsoptimize(state, function1_grad);
     minlbfgsresults(state, x, rep);
 
-    printf("termination type: %d\n", int(rep.terminationtype));
-    printf("solution: %s\n", x.tostring(2).c_str());
-
+	printf("----------------------------------------\n");
+	if (rep.terminationtype < 0) {
+		printf("Some error occured.\n");
+	} else if (rep.terminationtype == 1) {
+		printf("Function is converged.\n");
+	} else if (rep.terminationtype == 2) {
+		printf("Step is converged.\n");
+	} else if (rep.terminationtype == 4) {
+		printf("Gradient is converged.\n");
+	} else if (rep.terminationtype == 5) {
+		printf("MaxIts steps was taken.\n");
+	} else if (rep.terminationtype == 7) {
+		printf("Converged.\n");
+	} else {
+		printf("Unknown return type: %d\n", rep.terminationtype);
+	}
 
 	ae->visualize("weights.png");
 
