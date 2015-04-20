@@ -189,10 +189,15 @@ void test(int numpatches, int patchsize, int hiddenSize) {
 }
 
 int main() {
+	time_t start = clock();
+
 	test(10000, // numpatches
 		8,		// patchsize
 		25		// hiddenSize
 		);
+
+	time_t end = clock();
+	cout << "Elapsed time: " << (double)(end - start) / CLOCKS_PER_SEC << " [sec]" << endl;
 
 	return 0;
 }

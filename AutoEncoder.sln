@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DenoisingAutoencoder", "Den
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AutoEncoderFont", "AutoEncoderFont\AutoEncoderFont.vcxproj", "{7681A965-6CD6-4293-B548-0F5818727632}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AutoEncoderReverse", "AutoEncoderReverse\AutoEncoderReverse.vcxproj", "{AE5C99A9-2F16-4044-8131-76D7DEC98B5C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -39,6 +41,14 @@ Global
 		{7681A965-6CD6-4293-B548-0F5818727632}.Release|Win32.Build.0 = Release|Win32
 		{7681A965-6CD6-4293-B548-0F5818727632}.Release|x64.ActiveCfg = Release|x64
 		{7681A965-6CD6-4293-B548-0F5818727632}.Release|x64.Build.0 = Release|x64
+		{AE5C99A9-2F16-4044-8131-76D7DEC98B5C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{AE5C99A9-2F16-4044-8131-76D7DEC98B5C}.Debug|Win32.Build.0 = Debug|Win32
+		{AE5C99A9-2F16-4044-8131-76D7DEC98B5C}.Debug|x64.ActiveCfg = Debug|x64
+		{AE5C99A9-2F16-4044-8131-76D7DEC98B5C}.Debug|x64.Build.0 = Debug|x64
+		{AE5C99A9-2F16-4044-8131-76D7DEC98B5C}.Release|Win32.ActiveCfg = Release|Win32
+		{AE5C99A9-2F16-4044-8131-76D7DEC98B5C}.Release|Win32.Build.0 = Release|Win32
+		{AE5C99A9-2F16-4044-8131-76D7DEC98B5C}.Release|x64.ActiveCfg = Release|x64
+		{AE5C99A9-2F16-4044-8131-76D7DEC98B5C}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

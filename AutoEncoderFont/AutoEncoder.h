@@ -38,6 +38,7 @@ public:
 private:
 	Updates sparseEncoderCost(const Mat_<double>& W1, const Mat_<double>& W2, const Mat_<double>& b1, const Mat_<double>& b2, double lambda, double beta, double sparsityParam);
 	Mat_<double> sigmoid(const Mat_<double>& z);
+	void sigmoid(const Mat_<double>& z, Mat_<double>& ret);
 	double mat_sum(const Mat_<double>& m);
 	double mat_avg(const Mat_<double>& m);
 	double mat_max(const Mat_<double>& m);

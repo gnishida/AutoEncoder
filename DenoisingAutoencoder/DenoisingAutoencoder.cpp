@@ -69,14 +69,15 @@ void DenoisingAutoencoder::update(const Updates& updates, double eta) {
 
 void DenoisingAutoencoder::visualize(char* filename) {
 	int n = ceil(sqrt((double)hiddenSize));
+	int m = ceil(hiddenSize / (double)n);
 	int size = ceil(sqrt((double)visibleSize));
 
 	// 平均を引く
 	Mat_<double> X = W1 - mat_avg(W1);
 
-	Mat_<uchar> img = Mat_<uchar>::zeros((size + 1) * n + 1, (size + 1) * n + 1);
+	Mat_<uchar> img = Mat_<uchar>::zeros((size + 1) * m + 1, (size + 1) * n + 1);
 
-	for (int r = 0; r < n; ++r) {
+	for (int r = 0; r < m; ++r) {
 		for (int c = 0; c < n; ++c) {
 			int index = r * n + c;
 			if (index >= hiddenSize) continue;
@@ -93,9 +94,9 @@ void DenoisingAutoencoder::visualize(char* filename) {
 			// 最大値でわる
 			tmp = (tmp / max_val + 1) * 127;
 
-			for (int r2 = 0; r2 < size; ++r2) {
-				for (int c2 = 0; c2 < size; ++c2) {
-					int index2 = r2 * size + c2;
+			for (int c2 = 0; c2 < size; ++c2) {
+				for (int r2 = 0; r2 < size; ++r2) {			
+					int index2 = c2 * size + r2;
 					if (index2 >= visibleSize) continue;
 
 					img(y0 + r2, x0 + c2) = tmp(0, index2);
@@ -104,7 +105,6 @@ void DenoisingAutoencoder::visualize(char* filename) {
 		}
 	}
 
-	flip(img, img, 0);
 	imwrite(filename, img);
 }
 
@@ -233,6 +233,10 @@ Updates DenoisingAutoencoder::sparseEncoderCost(const Mat_<double>& W1, const Ma
 	updates.dW2 = Mat_<double>::zeros(visibleSize, hiddenSize);
 	updates.db1 = Mat_<double>::zeros(hiddenSize, 1);
 	updates.db2 = Mat_<double>::zeros(visibleSize, 1);
+
+	// ☆☆☆
+	// こいつだけ、まだ性能向上のための改善は行ってない。
+	// ☆☆☆
 
 	// forward pass
 	Mat_<double> a2(hiddenSize, M);

@@ -59,14 +59,15 @@ void AutoEncoder::update(const Updates& updates, double eta) {
 
 void AutoEncoder::visualize(char* filename) {
 	int n = ceil(sqrt((double)hiddenSize));
+	int m = ceil(hiddenSize / (double)n);
 	int size = ceil(sqrt((double)visibleSize));
 
 	// 平均を引く
 	Mat_<double> X = W1 - mat_avg(W1);
 
-	Mat_<uchar> img = Mat_<uchar>::zeros((size + 1) * n + 1, (size + 1) * n + 1);
+	Mat_<uchar> img = Mat_<uchar>::zeros((size + 1) * m + 1, (size + 1) * n + 1);
 
-	for (int r = 0; r < n; ++r) {
+	for (int r = 0; r < m; ++r) {
 		for (int c = 0; c < n; ++c) {
 			int index = r * n + c;
 			if (index >= hiddenSize) continue;
@@ -83,9 +84,9 @@ void AutoEncoder::visualize(char* filename) {
 			// 最大値でわる
 			tmp = (tmp / max_val + 1) * 127;
 
-			for (int r2 = 0; r2 < size; ++r2) {
-				for (int c2 = 0; c2 < size; ++c2) {
-					int index2 = r2 * size + c2;
+			for (int c2 = 0; c2 < size; ++c2) {
+				for (int r2 = 0; r2 < size; ++r2) {			
+					int index2 = c2 * size + r2;
 					if (index2 >= visibleSize) continue;
 
 					img(y0 + r2, x0 + c2) = tmp(0, index2);
@@ -94,7 +95,6 @@ void AutoEncoder::visualize(char* filename) {
 		}
 	}
 
-	flip(img, img, 0);
 	imwrite(filename, img);
 }
 
@@ -229,40 +229,18 @@ Updates AutoEncoder::sparseEncoderCost(const Mat_<double>& W1, const Mat_<double
 	Mat_<double> a2(hiddenSize, M);
 	Mat_<double> a3(visibleSize, M);
 
-	for (int m = 0; m < M; ++m) {
-		Mat_<double> a2_m(a2, cv::Rect(m, 0, 1, a2.rows));
-		Mat_<double> tmp = sigmoid(W1 * data.col(m) + b1);
-		tmp.copyTo(a2_m);
-
-		Mat_<double> a3_m(a3, cv::Rect(m, 0, 1, a3.rows));
-		tmp = sigmoid(W2 * a2_m + b2);
-		tmp.copyTo(a3_m);
-
-		rho_hat += a2_m;
-
-		updates.cost += mat_sum((a3_m - data.col(m)).mul(a3_m - data.col(m))) * 0.5;
-	}
-	rho_hat /= M;
+	sigmoid(W1 * data + repeat(b1, 1, M), a2);
+	sigmoid(W2 * a2 + repeat(b2, 1, M), a3);
+	reduce(a2, rho_hat, 1, CV_REDUCE_AVG);
+	updates.cost = mat_sum((a3 - data).mul(a3 - data)) * 0.5 / M + lambda * 0.5 * (mat_sum(W1.mul(W1)) + mat_sum(W2.mul(W2)));
 
 	// back propagation
-	for (int m = 0; m < M; ++m) {
-		Mat_<double> delta3 = -(data.col(m) - a3.col(m)).mul(a3.col(m)).mul(1 - a3.col(m));
-		Mat_<double> delta2 = (W2.t() * delta3 + beta * (-sparsityParam / rho_hat + (1-sparsityParam) / (1-rho_hat))).mul(a2.col(m)).mul(1 - a2.col(m));
-
-		updates.dW1 += delta2 * data.col(m).t();
-		updates.dW2 += delta3 * a2.col(m).t();
-		updates.db1 += delta2;
-		updates.db2 += delta3;
-	}
-
-	updates.dW1 = updates.dW1 / M + lambda * W1;
-	updates.dW2 = updates.dW2 / M + lambda * W2;
-	updates.db1 /= M;
-	updates.db2 /= M;
-
-	updates.cost /= M;
-
-	updates.cost += lambda * 0.5 * (mat_sum(W1.mul(W1)) + mat_sum(W2.mul(W2)));
+	Mat_<double> delta3 = -(data - a3).mul(a3).mul(1 - a3);
+	Mat_<double> delta2 = (W2.t() * delta3 + beta * repeat(-sparsityParam / rho_hat + (1-sparsityParam) / (1-rho_hat), 1, M)).mul(a2).mul(1 - a2);
+	updates.dW1 = delta2 * data.t() / M + lambda * W1;
+	updates.dW2 = delta3 * a2.t() / M + lambda * W2;
+	reduce(delta2, updates.db1, 1, CV_REDUCE_AVG);
+	reduce(delta3, updates.db2, 1, CV_REDUCE_AVG);
 
 	// sparsity penalty
 	Mat log1, log2;
@@ -292,6 +270,16 @@ Mat_<double> AutoEncoder::sigmoid(const Mat_<double>& z) {
 	}
 
 	return ret;
+}
+
+void AutoEncoder::sigmoid(const Mat_<double>& z, Mat_<double>& ret) {
+	ret = Mat_<double>(z.size());
+
+	for (int r = 0; r < z.rows; ++r) {
+		for (int c = 0; c < z.cols; ++c) {
+			ret(r, c) = 1.0 / (1.0 + exp(-z(r, c)));
+		}
+	}
 }
 
 /**
