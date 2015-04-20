@@ -40,7 +40,7 @@ void function1_grad(const real_1d_array &x, double &func, real_1d_array &grad, v
 	for (int i = 0; i < x.length(); ++i) {
 		vec_x[i] = x[i];
 	}
-	ae->decodeAndUpdate(vec_x);
+	ae->update(vec_x);
 
 	// W、bなどに基づいて、costと偏微分を計算する
 	Updates updates = ae->train(lambda, beta, sparsityParam);
@@ -49,7 +49,7 @@ void function1_grad(const real_1d_array &x, double &func, real_1d_array &grad, v
 	printf("%d: Cost = %lf\n", count++, updates.cost);
 
     // 偏微分をgradに格納する
-	vector<double> derivatives = ae->encodeDerivatives(updates);
+	vector<double> derivatives = ae->serializeDerivatives(updates);
 	for (int i = 0; i < derivatives.size(); ++i) {
 		grad[i] = derivatives[i];
 	}
@@ -101,13 +101,15 @@ void sampleIMAGES(vector<Mat_<double> >& imgs, int num_patches, int patchsize, M
 	double pstd = stddev.val[0] * sqrt((X.rows * X.cols) / (double)(X.rows * X.cols - 1)) * 3.0;
 
 	// 各列の値が[-1, 1]の範囲になるようnormalizeする
-	X = cv::max(cv::min(X, pstd), -pstd) / pstd;
+	if (pstd > 0) {
+		X = cv::max(cv::min(X, pstd), -pstd) / pstd;
+	}
 
 	// [0.1,0.9]の範囲になるようnormalizeする
 	X = (X + 1.0) * 0.4 + 0.1;
 }
 
-void test(int numpatches, int patchsize, int hiddenSize) {
+void learn(int numpatches, int patchsize, int hiddenSize, int epochs) {
 	vector<Mat_<double> > imgs;
 	MNISTLoader::loadImages("images10000.idx3-ubyte", imgs);
 
@@ -118,12 +120,12 @@ void test(int numpatches, int patchsize, int hiddenSize) {
 	ae = new AutoEncoder(patches, hiddenSize);
 
 	// BFGSを使って最適化
-    real_1d_array x = ae->encodeParams().c_str();	// 初期値
+    real_1d_array x = ae->serializeParams().c_str();	// 初期値
 
     double epsg = 0.0000000001;
     double epsf = 0;
     double epsx = 0;
-    ae_int_t maxits = 100;
+    ae_int_t maxits = epochs;
     minlbfgsstate state;
     minlbfgsreport rep;
 
@@ -150,15 +152,43 @@ void test(int numpatches, int patchsize, int hiddenSize) {
 	}
 
 	ae->visualize("weights.png");
+	ae->save("weights.txt");
 
 	delete ae;
 }
 
-int main() {
-	test(100,//10000, // numpatches
-		28,		// patchsize
-		200	// hiddenSize
-		);
+void test(int patchsize, int numSamples, char* filename) {
+	vector<Mat_<double> > imgs;
+	MNISTLoader::loadImages("images10000.idx3-ubyte", imgs);
+
+	ae = new AutoEncoder(filename);
+
+	Mat_<double> patches2;
+	sampleIMAGES(imgs, numSamples, patchsize, patches2);
+	ae->generateSamples(patches2, "samples.png");
+	
+
+	delete ae;
+}
+
+int main(int argc, char* argv[]) {
+	if (argc == 4) {
+		learn(atoi(argv[1]), // numpatches
+			28,		// patchsize
+			atoi(argv[2]),	// hiddenSize
+			atoi(argv[3])	// epochs
+			);
+	} else if (argc == 2) {
+		test(28, atoi(argv[2]), argv[1]);
+	} else {
+		printf("\n");
+		printf("Usage: %s <num patches> <hidden size> <epochs>\n", argv[0]);
+		printf("    ex. %s 10000 200 100\n", argv[0]);
+		printf("Usage: %s <filename> <num samples>\n", argv[0]);
+		printf("    ex. %s weights.txt 10\n", argv[0]);
+		printf("\n");
+	}
+
 
 	return 0;
 }

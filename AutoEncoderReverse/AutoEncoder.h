@@ -16,7 +16,7 @@ struct Updates {
 
 class AutoEncoder {
 private:
-	const Mat_<double>& data;	// 入力データ (各列が、各観測データ）
+	Mat_<double> data;			// 入力データ (各列が、各観測データ）
 	Mat_<double> W1, W2;		// 重み
 	Mat_<double> b1, b2;		// バイアス
 	int M;						// 観測データの数
@@ -25,15 +25,17 @@ private:
 
 public:
 	AutoEncoder(const Mat_<double>& data, int hiddenSize);
+	AutoEncoder(char* filename);
 
 	Updates train(double lambda, double beta, double sparsityParam);
-	void decodeAndUpdate(const vector<double>& theta);
+	void update(const vector<double>& theta);
 	void update(const Updates& updates, double eta);
 	void visualize(char* filename);
 	Updates computeNumericalGradient(double lambda, double beta, double sparsityParam);
-	string encodeParams();
-	vector<double> encodeDerivatives(const Updates& updates);
-	void debug();
+	string serializeParams();
+	vector<double> serializeDerivatives(const Updates& updates);
+	void generateSamples(const Mat_<double>& data, char* filename);
+	void save(char* filename);
 
 private:
 	Updates sparseEncoderCost(const Mat_<double>& W1, const Mat_<double>& W2, const Mat_<double>& b1, const Mat_<double>& b2, double lambda, double beta, double sparsityParam);

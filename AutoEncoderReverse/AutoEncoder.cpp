@@ -19,6 +19,42 @@ AutoEncoder::AutoEncoder(const Mat_<double>& data, int hiddenSize) : data(data),
 	randu(W2, -r, r);
 }
 
+AutoEncoder::AutoEncoder(char* filename) {
+	FILE* fp = fopen(filename, "r");
+
+	int rows, cols;
+	fscanf(fp, "%d, %d\n", &rows, &cols);
+	W1 = Mat_<double>(rows, cols);
+	fscanf(fp, "%d, %d\n", &rows, &cols);
+	W2 = Mat_<double>(rows, cols);
+	fscanf(fp, "%d\n", &rows);
+	b1 = Mat_<double>(rows, 1);
+	fscanf(fp, "%d\n", &rows);
+	b2 = Mat_<double>(rows, 1);
+
+	visibleSize = W1.cols;
+	hiddenSize = W1.rows;
+
+	for (int c = 0; c < W1.cols; ++c) {
+		for (int r = 0; r < W1.rows; ++r) {
+			fscanf(fp, "%lf\n", &W1(r, c));
+		}
+	}
+	for (int c = 0; c < W2.cols; ++c) {
+		for (int r = 0; r < W2.rows; ++r) {
+			fscanf(fp, "%lf\n", &W2(r, c));
+		}
+	}
+	for (int r = 0; r < b1.rows; ++r) {
+		fscanf(fp, "%lf\n", &b1(r, 0));
+	}
+	for (int r = 0; r < b2.rows; ++r) {
+		fscanf(fp, "%lf\n", &b2(r, 0));
+	}
+
+	fclose(fp);
+}
+
 /**
  * Autoencoderを１回だけ学習する。
  * 通常、この関数を一定回数実行し、収束させる。
@@ -29,7 +65,7 @@ Updates AutoEncoder::train(double lambda, double beta, double sparsityParam) {
 	return sparseEncoderCost(W1, W2, b1, b2, lambda, beta, sparsityParam);
 }
 
-void AutoEncoder::decodeAndUpdate(const vector<double>& theta) {
+void AutoEncoder::update(const vector<double>& theta) {
 	int index = 0;
 
 	for (int c = 0; c < W1.cols; ++c) {
@@ -157,7 +193,12 @@ Updates AutoEncoder::computeNumericalGradient(double lambda, double beta, double
 	return updates;
 }
 
-string AutoEncoder::encodeParams() {
+/**
+ * パラメータを、文字列にシリアライズする。
+ *
+ * @return	シリアライズされたパラメータ
+ */
+string AutoEncoder::serializeParams() {
 	ostringstream oss;
 
 	oss << "[";
@@ -185,7 +226,12 @@ string AutoEncoder::encodeParams() {
 	return oss.str();
 }
 
-vector<double> AutoEncoder::encodeDerivatives(const Updates& updates) {
+/**
+ * 偏微分をシリアライズする。
+ *
+ * @param	
+ */
+vector<double> AutoEncoder::serializeDerivatives(const Updates& updates) {
 	vector<double> ret(W1.rows * W1.cols + W2.rows * W2.cols + b1.rows + b2.rows);
 	int index = 0;
 
@@ -209,11 +255,86 @@ vector<double> AutoEncoder::encodeDerivatives(const Updates& updates) {
 	return ret;
 }
 
-void AutoEncoder::debug() {
-	cout << W1 << endl;
-	cout << W2 << endl;
-	cout << b1 << endl;
-	cout << b2 << endl;
+/**
+ * 現在のネットワークのパラメータを使って、指定された入力データから、outputを計算し、
+ * 指定された数だけ、Top-downによりinputデータを生成する。
+ * 元のinputデータ、および、生成されたinputデータを、画像として保存する。
+ *
+ * @param data			入力データ (dxmの列ベクトル)
+ * @param numSamples	生成するinputデータの数
+ * @param filename		ファイル名
+ */
+void AutoEncoder::generateSamples(const Mat_<double>& data, char* filename) {
+	int M2 = data.cols;
+	int size = ceil(sqrt((double)data.rows));
+
+	Mat_<double> a2(hiddenSize, M2);
+	Mat_<double> a3(visibleSize, M2);
+
+	sigmoid(W1 * data + repeat(b1, 1, M2), a2);
+	sigmoid(W2 * a2 + repeat(b2, 1, M2), a3);
+
+	// 平均を引く
+	Mat_<double> X = data - mat_avg(data);
+	Mat_<double> Z = a3 - mat_avg(a3);
+
+	Mat_<uchar> img = Mat_<uchar>::zeros((size + 1) * 2 + 1, (size + 1) * M2 + 1);
+
+	// inputデータ
+	for (int m = 0; m < M2; ++m) {
+		// 絶対値の最大を取得する
+		Mat_<double> tmp1 = X.col(m);
+		Mat_<double> tmp2 = Z.col(m);
+		double max_val1 = mat_max(cv::abs(tmp1));
+		double max_val2 = mat_max(cv::abs(tmp2));
+
+		// 最大値でわる
+		tmp1 = (tmp1 / max_val1 + 1) * 127;
+		tmp2 = (tmp2 / max_val2 + 1) * 127;
+
+		for (int r = 0; r < size; ++r) {
+			for (int c = 0; c < size; ++c) {
+				int index = c * size + r;
+				img(r + 1, m * (size + 1) + 1 + c) = tmp1(index, 0);
+				img(size + 2 + r, m * (size + 1) + 1 + c) = tmp2(index, 0);
+			}
+		}
+	}
+
+	imwrite(filename, img);
+}
+
+/**
+ * ネットワークのパラメータをファイルに保存する。
+ *
+ * @param filename	ファイル名
+ */
+void AutoEncoder::save(char* filename) {
+	FILE* fp = fopen(filename, "w");
+
+	fprintf(fp, "%d,%d\n", W1.rows, W1.cols);
+	fprintf(fp, "%d,%d\n", W2.rows, W2.cols);
+	fprintf(fp, "%d\n", b1.rows);
+	fprintf(fp, "%d\n", b2.rows);
+
+	for (int c = 0; c < W1.cols; ++c) {
+		for (int r = 0; r < W1.rows; ++r) {
+			fprintf(fp, "%lf\n", W1(r, c));
+		}
+	}
+	for (int c = 0; c < W2.cols; ++c) {
+		for (int r = 0; r < W2.rows; ++r) {
+			fprintf(fp, "%lf\n", W2(r, c));
+		}
+	}
+	for (int r = 0; r < b1.rows; ++r) {
+		fprintf(fp, "%lf\n", b1(r, 0));
+	}
+	for (int r = 0; r < b2.rows; ++r) {
+		fprintf(fp, "%lf\n", b2(r, 0));
+	}
+
+	fclose(fp);
 }
 
 Updates AutoEncoder::sparseEncoderCost(const Mat_<double>& W1, const Mat_<double>& W2, const Mat_<double>& b1, const Mat_<double>& b2, double lambda, double beta, double sparsityParam) {
