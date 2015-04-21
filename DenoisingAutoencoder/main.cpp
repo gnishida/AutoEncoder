@@ -19,7 +19,6 @@ using namespace alglib;
 
 DenoisingAutoencoder* ae;
 
-double lambda = 0.0001;
 double corruption_level = 0.5;
 
 /**
@@ -32,7 +31,7 @@ double corruption_level = 0.5;
  * @param ptr
  */
 void function1_grad(const real_1d_array &x, double &func, real_1d_array &grad, void *ptr)  {
-	static int count = 0;
+	/*static int count = 0;
 
 	// ベクトルのパラメータxを分解して、W、bなどを更新する
 	vector<double> vec_x(x.length());
@@ -51,7 +50,7 @@ void function1_grad(const real_1d_array &x, double &func, real_1d_array &grad, v
 	vector<double> derivatives = ae->serializeDerivatives(updates);
 	for (int i = 0; i < derivatives.size(); ++i) {
 		grad[i] = derivatives[i];
-	}
+	}*/
 }
 
 /**
@@ -141,7 +140,7 @@ void sampleIMAGES(vector<Mat_<double> >& imgs, int num_patches, int patchsize, M
 	X = (X + 1.0) * 0.4 + 0.1;
 }
 
-void learn(int numpatches, int patchsize, int hiddenSize, int epochs) {
+void learn(int numpatches, int patchsize, int hiddenSize, int epochs, double learning_rate) {
 	// 以下の行は、最初に１回だけ、小さいデータセットを作成するために必要。
 	//MNISTLoader::saveFirstNImages("train-images.idx3-ubyte", 10000, "images10000.idx3-ubyte");
 
@@ -157,18 +156,17 @@ void learn(int numpatches, int patchsize, int hiddenSize, int epochs) {
 
 	// 勾配のチェック
 	/*
-	vector<double> d1 = ae->serializeDerivatives(ae->train(lambda));
-	vector<double> d2 = ae->serializeDerivatives(ae->computeNumericalGradient(lambda));
+	vector<double> d1 = ae->serializeDerivatives(ae->train(learning_rate));
+	vector<double> d2 = ae->serializeDerivatives(ae->computeNumericalGradient());
 
 	for (int i = 0; i < d1.size(); ++i) {
 		cout << d1[i] << ", " << d2[i] << endl;
 	}
 	*/
 
-
 	for (int epoch = 0; epoch < epochs; ++epoch) {
-		Updates updates = ae->train(lambda);
-		ae->update(updates, 0.01);
+		Updates updates = ae->train();
+		ae->update(updates, learning_rate);
 		printf("%d: Cost = %lf\n", epoch, updates.cost);
 	}
 
@@ -216,16 +214,17 @@ void learn(int numpatches, int patchsize, int hiddenSize, int epochs) {
 }
 
 int main(int argc, char* argv[]) {
-	if (argc == 5) {
+	if (argc == 6) {
 		learn(atoi(argv[1]), // numpatches
 			atoi(argv[2]),	// patchsize
 			atoi(argv[3]),	// hiddenSize
-			atoi(argv[4])	// epochs
+			atoi(argv[4]),	// epochs
+			atof(argv[5])	// learning rate
 			);
 	} else {
 		printf("\n");
-		printf("Usage: %s <num patches> <patch size> <hidden size> <epochs>\n", argv[0]);
-		printf("    ex. %s 10000 12 200 10000\n", argv[0]);
+		printf("Usage: %s <num patches> <patch size> <hidden size> <epochs> <learning rate>\n", argv[0]);
+		printf("    ex. %s 10000 12 200 10000 0.01\n", argv[0]);
 		printf("\n");
 	}
 

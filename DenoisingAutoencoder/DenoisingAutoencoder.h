@@ -26,16 +26,17 @@ private:
 public:
 	DenoisingAutoencoder(const Mat_<double>& data, int hiddenSize, double corruption_level);
 
-	Updates train(double lambda);
+	Updates train();
 	void update(const vector<double>& theta);
 	void update(const Updates& updates, double eta);
 	void visualize(char* filename);
-	Updates computeNumericalGradient(double lambda);
+	Updates computeNumericalGradient();
 	string serializeParams();
 	vector<double> serializeDerivatives(const Updates& updates);
 
 private:
-	Updates sparseEncoderCost(const Mat_<double>& W1, const Mat_<double>& b1, const Mat_<double>& b2, double lambda);
+	Mat_<double> corrupt(const Mat_<double>& data);
+	Updates sparseEncoderCost(const Mat_<double>& W1, const Mat_<double>& b1, const Mat_<double>& b2);
 	Mat_<double> sigmoid(const Mat_<double>& z);
 	void sigmoid(const Mat_<double>& z, Mat_<double>& ret);
 	double mat_sum(const Mat_<double>& m);

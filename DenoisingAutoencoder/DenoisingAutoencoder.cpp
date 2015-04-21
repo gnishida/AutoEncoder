@@ -28,8 +28,43 @@ DenoisingAutoencoder::DenoisingAutoencoder(const Mat_<double>& data, int hiddenS
  *
  * @return			コスト
  */
-Updates DenoisingAutoencoder::train(double lambda) {
-	return sparseEncoderCost(W1, b1, b2, lambda);
+Updates DenoisingAutoencoder::train() {
+	/*
+	Updates updates;
+	updates.cost = 0.0f;
+
+	for (int m = 0; m < M; ++m) {
+		// forward pass
+		Mat_<double> a2(hiddenSize, 1);
+		Mat_<double> a3(visibleSize, 1);
+
+		sigmoid(W1 * data.col(m) + b1, a2);
+		sigmoid(W1.t() * a2 + b2, a3);
+		
+		// back propagation		
+		updates.dW1 = -(W1 * (data.col(m) - a3)).mul(a2).mul(1 - a2) * data.col(m).t() - a2 * (data.col(m) - a3).t();
+		updates.db1 = -(W1 * (data.col(m) - a3)).mul(a2).mul(1 - a2);
+		updates.db2 = -(data.col(m) - a3);
+	}
+
+	{
+		// forward pass
+		Mat_<double> a2(hiddenSize, M);
+		Mat_<double> a3(visibleSize, M);
+
+		sigmoid(W1 * data + repeat(b1, 1, M), a2);
+		sigmoid(W1.t() * a2 + repeat(b2, 1, M), a3);
+
+		Mat_<double> log1, log2;
+		log(a3, log1);
+		log(1 - a3, log2);
+		updates.cost = -mat_sum(data.mul(log1) + (1 - data).mul(log2)) / M;
+	}
+
+	return updates.cost;
+	*/
+
+	return sparseEncoderCost(W1, b1, b2);
 }
 
 void DenoisingAutoencoder::update(const vector<double>& theta) {
@@ -102,7 +137,7 @@ void DenoisingAutoencoder::visualize(char* filename) {
  * @param x			このポイントにおける勾配を計算する（xは、行ベクトルであること！）
  * @return			勾配ベクトル
  */
-Updates DenoisingAutoencoder::computeNumericalGradient(double lambda) {
+Updates DenoisingAutoencoder::computeNumericalGradient() {
 	Updates updates;
 	updates.dW1 = Mat_<double>(W1.size());
 	updates.db1 = Mat_<double>(b1.size());
@@ -115,8 +150,8 @@ Updates DenoisingAutoencoder::computeNumericalGradient(double lambda) {
 			Mat_<double> dW1 = Mat_<double>::zeros(W1.size());
 			dW1(r, c) = e;
 
-			Updates u1 = sparseEncoderCost(W1 + dW1, b1, b2, lambda);
-			Updates u2 = sparseEncoderCost(W1 - dW1, b1, b2, lambda);
+			Updates u1 = sparseEncoderCost(W1 + dW1, b1, b2);
+			Updates u2 = sparseEncoderCost(W1 - dW1, b1, b2);
 			updates.dW1(r, c) = (u1.cost - u2.cost) / e / 2.0;
 		}
 	}
@@ -125,8 +160,8 @@ Updates DenoisingAutoencoder::computeNumericalGradient(double lambda) {
 		Mat_<double> db1 = Mat_<double>::zeros(b1.size());
 		db1(r, 0) = e;
 
-		Updates u1 = sparseEncoderCost(W1, b1 + db1, b2, lambda);
-		Updates u2 = sparseEncoderCost(W1, b1 - db1, b2, lambda);
+		Updates u1 = sparseEncoderCost(W1, b1 + db1, b2);
+		Updates u2 = sparseEncoderCost(W1, b1 - db1, b2);
 		updates.db1(r, 0) = (u1.cost - u2.cost) / e / 2.0;
 	}
 
@@ -134,8 +169,8 @@ Updates DenoisingAutoencoder::computeNumericalGradient(double lambda) {
 		Mat_<double> db2 = Mat_<double>::zeros(b2.size());
 		db2(r, 0) = e;
 
-		Updates u1 = sparseEncoderCost(W1, b1, b2 + db2, lambda);
-		Updates u2 = sparseEncoderCost(W1, b1, b2 - db2, lambda);
+		Updates u1 = sparseEncoderCost(W1, b1, b2 + db2);
+		Updates u2 = sparseEncoderCost(W1, b1, b2 - db2);
 		updates.db2(r, 0) = (u1.cost - u2.cost) / e / 2.0;
 	}
 
@@ -184,7 +219,15 @@ vector<double> DenoisingAutoencoder::serializeDerivatives(const Updates& updates
 	return ret;
 }
 
-Updates DenoisingAutoencoder::sparseEncoderCost(const Mat_<double>& W1, const Mat_<double>& b1, const Mat_<double>& b2, double lambda) {
+Mat_<double> DenoisingAutoencoder::corrupt(const Mat_<double>& data) {
+	Mat_<double> tilde_data(data.size());
+	randn(tilde_data, 0, 0.1);
+	tilde_data += data;
+
+	return tilde_data;
+}
+
+Updates DenoisingAutoencoder::sparseEncoderCost(const Mat_<double>& W1, const Mat_<double>& b1, const Mat_<double>& b2) {
 	Updates updates;
 	updates.cost = 0.0f;
 	updates.dW1 = Mat_<double>::zeros(hiddenSize, visibleSize);
