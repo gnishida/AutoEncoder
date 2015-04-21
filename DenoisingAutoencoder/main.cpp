@@ -39,7 +39,7 @@ void function1_grad(const real_1d_array &x, double &func, real_1d_array &grad, v
 	for (int i = 0; i < x.length(); ++i) {
 		vec_x[i] = x[i];
 	}
-	ae->decodeAndUpdate(vec_x);
+	ae->update(vec_x);
 
 	// W、bなどに基づいて、costと偏微分を計算する
 	Updates updates = ae->train(lambda);
@@ -48,7 +48,7 @@ void function1_grad(const real_1d_array &x, double &func, real_1d_array &grad, v
 	printf("%d: Cost = %lf\n", count++, updates.cost);
 
     // 偏微分をgradに格納する
-	vector<double> derivatives = ae->encodeDerivatives(updates);
+	vector<double> derivatives = ae->serializeDerivatives(updates);
 	for (int i = 0; i < derivatives.size(); ++i) {
 		grad[i] = derivatives[i];
 	}
@@ -141,7 +141,7 @@ void sampleIMAGES(vector<Mat_<double> >& imgs, int num_patches, int patchsize, M
 	X = (X + 1.0) * 0.4 + 0.1;
 }
 
-void test(int numpatches, int patchsize, int hiddenSize) {
+void learn(int numpatches, int patchsize, int hiddenSize, int epochs) {
 	// 以下の行は、最初に１回だけ、小さいデータセットを作成するために必要。
 	//MNISTLoader::saveFirstNImages("train-images.idx3-ubyte", 10000, "images10000.idx3-ubyte");
 
@@ -153,13 +153,37 @@ void test(int numpatches, int patchsize, int hiddenSize) {
 
 	ae = new DenoisingAutoencoder(patches, hiddenSize, corruption_level);
 
+
+
+	// 勾配のチェック
+	/*
+	vector<double> d1 = ae->serializeDerivatives(ae->train(lambda));
+	vector<double> d2 = ae->serializeDerivatives(ae->computeNumericalGradient(lambda));
+
+	for (int i = 0; i < d1.size(); ++i) {
+		cout << d1[i] << ", " << d2[i] << endl;
+	}
+	*/
+
+
+	for (int epoch = 0; epoch < epochs; ++epoch) {
+		Updates updates = ae->train(lambda);
+		ae->update(updates, 0.01);
+		printf("%d: Cost = %lf\n", epoch, updates.cost);
+	}
+
+
+
+
+
 	// BFGSを使って最適化
-    real_1d_array x = ae->encodeParams().c_str();	// 初期値
+	/*
+    real_1d_array x = ae->serializeParams().c_str();	// 初期値
 
     double epsg = 0;//.0000000001;
     double epsf = 0;
     double epsx = 0;
-    ae_int_t maxits = 400;
+    ae_int_t maxits = epochs;
     minlbfgsstate state;
     minlbfgsreport rep;
 
@@ -184,17 +208,26 @@ void test(int numpatches, int patchsize, int hiddenSize) {
 	} else {
 		printf("Unknown return type: %d\n", rep.terminationtype);
 	}
+	*/
 
 	ae->visualize("weights.png");
 
 	delete ae;
 }
 
-int main() {
-	test(10000, // numpatches
-		8,		// patchsize
-		25		// hiddenSize
-		);
+int main(int argc, char* argv[]) {
+	if (argc == 5) {
+		learn(atoi(argv[1]), // numpatches
+			atoi(argv[2]),	// patchsize
+			atoi(argv[3]),	// hiddenSize
+			atoi(argv[4])	// epochs
+			);
+	} else {
+		printf("\n");
+		printf("Usage: %s <num patches> <patch size> <hidden size> <epochs>\n", argv[0]);
+		printf("    ex. %s 10000 12 200 10000\n", argv[0]);
+		printf("\n");
+	}
 
 	return 0;
 }

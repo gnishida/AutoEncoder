@@ -142,7 +142,7 @@ void sampleIMAGES(vector<Mat_<double> >& imgs, int num_patches, int patchsize, M
 	X = (X + 1.0) * 0.4 + 0.1;
 }
 
-void test(int numpatches, int patchsize, int hiddenSize) {
+void learn(int numpatches, int patchsize, int hiddenSize, int epochs) {
 	vector<Mat_<double> > imgs;
 	loadImages("images.dat", imgs);
 
@@ -157,7 +157,7 @@ void test(int numpatches, int patchsize, int hiddenSize) {
     double epsg = 0.0000000001;
     double epsf = 0;
     double epsx = 0;
-    ae_int_t maxits = 400;
+    ae_int_t maxits = epochs;
     minlbfgsstate state;
     minlbfgsreport rep;
 
@@ -188,16 +188,19 @@ void test(int numpatches, int patchsize, int hiddenSize) {
 	delete ae;
 }
 
-int main() {
-	time_t start = clock();
-
-	test(10000, // numpatches
-		8,		// patchsize
-		25		// hiddenSize
-		);
-
-	time_t end = clock();
-	cout << "Elapsed time: " << (double)(end - start) / CLOCKS_PER_SEC << " [sec]" << endl;
+int main(int argc, char* argv[]) {
+	if (argc == 5) {
+		learn(atoi(argv[1]), // numpatches
+			atoi(argv[2]),	// patchsize
+			atoi(argv[3]),	// hiddenSize
+			atoi(argv[4])	// epochs
+			);
+	} else {
+		printf("\n");
+		printf("Usage: %s <num patches> <patch size> <hidden size> <epochs>\n", argv[0]);
+		printf("    ex. %s 10000 8 25 400\n", argv[0]);
+		printf("\n");
+	}
 
 	return 0;
 }
