@@ -178,7 +178,7 @@ int main(int argc, char* argv[]) {
 			atoi(argv[2]),	// hiddenSize
 			atoi(argv[3])	// epochs
 			);
-	} else if (argc == 2) {
+	} else if (argc == 3) {
 		test(28, atoi(argv[2]), argv[1]);
 	} else {
 		printf("\n");
