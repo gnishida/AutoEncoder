@@ -3,14 +3,9 @@
 #include <sstream>
 
 
-DenoisingAutoencoder::DenoisingAutoencoder(const Mat_<double>& data, int hiddenSize, double corruption_level) : data(data), hiddenSize(hiddenSize) {
+DenoisingAutoencoder::DenoisingAutoencoder(const Mat_<double>& data, int hiddenSize, double corruption_level) : data(data), hiddenSize(hiddenSize), corruption_level(corruption_level) {
 	M = data.cols;
 	visibleSize = data.rows;
-
-	// corrupted input
-	tilde_data = Mat_<double>(data.size());
-	randn(tilde_data, 0, 0.1);
-	tilde_data += data;
 
 	double r = sqrt(6.0 / (visibleSize + hiddenSize + 1.0));
 
@@ -221,8 +216,12 @@ vector<double> DenoisingAutoencoder::serializeDerivatives(const Updates& updates
 
 Mat_<double> DenoisingAutoencoder::corrupt(const Mat_<double>& data) {
 	Mat_<double> tilde_data(data.size());
-	randn(tilde_data, 0, 0.1);
-	tilde_data += data;
+
+	for (int r = 0; r < tilde_data.rows; ++r) {
+		for (int c = 0; c < tilde_data.cols; ++c) {
+			tilde_data(r, c) = (double)rand() / RAND_MAX < (1.0 - corruption_level) ? data(r, c) : 0;
+		}
+	}
 
 	return tilde_data;
 }
@@ -233,6 +232,8 @@ Updates DenoisingAutoencoder::sparseEncoderCost(const Mat_<double>& W1, const Ma
 	updates.dW1 = Mat_<double>::zeros(hiddenSize, visibleSize);
 	updates.db1 = Mat_<double>::zeros(hiddenSize, 1);
 	updates.db2 = Mat_<double>::zeros(visibleSize, 1);
+
+	Mat_<double> tilde_data = corrupt(data);
 
 	// forward pass
 	Mat_<double> a2(hiddenSize, M);
@@ -247,7 +248,7 @@ Updates DenoisingAutoencoder::sparseEncoderCost(const Mat_<double>& W1, const Ma
 	updates.cost = -mat_sum(data.mul(log1) + (1 - data).mul(log2)) / M;
 
 	// back propagation
-	updates.dW1 = (W1 * (data - a3)).mul(a2).mul(1 - a2) * data.t() + a2 * (data - a3).t();
+	updates.dW1 = (W1 * (data - a3)).mul(a2).mul(1 - a2) * tilde_data.t() + a2 * (data - a3).t();
 	updates.dW1 /= -M;
 	reduce((W1 * (a3 - data)).mul(a2).mul(1 - a2), updates.db1, 1, CV_REDUCE_AVG);
 	reduce(a3 - data, updates.db2, 1, CV_REDUCE_AVG);

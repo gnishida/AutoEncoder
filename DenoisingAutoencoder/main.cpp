@@ -19,7 +19,7 @@ using namespace alglib;
 
 DenoisingAutoencoder* ae;
 
-double corruption_level = 0.5;
+double corruption_level = 0.3;
 
 /**
  * L-BFGSから呼ばれる関数。
@@ -31,7 +31,7 @@ double corruption_level = 0.5;
  * @param ptr
  */
 void function1_grad(const real_1d_array &x, double &func, real_1d_array &grad, void *ptr)  {
-	/*static int count = 0;
+	static int count = 0;
 
 	// ベクトルのパラメータxを分解して、W、bなどを更新する
 	vector<double> vec_x(x.length());
@@ -41,7 +41,7 @@ void function1_grad(const real_1d_array &x, double &func, real_1d_array &grad, v
 	ae->update(vec_x);
 
 	// W、bなどに基づいて、costと偏微分を計算する
-	Updates updates = ae->train(lambda);
+	Updates updates = ae->train();
 
     func = updates.cost;
 	printf("%d: Cost = %lf\n", count++, updates.cost);
@@ -50,7 +50,7 @@ void function1_grad(const real_1d_array &x, double &func, real_1d_array &grad, v
 	vector<double> derivatives = ae->serializeDerivatives(updates);
 	for (int i = 0; i < derivatives.size(); ++i) {
 		grad[i] = derivatives[i];
-	}*/
+	}
 }
 
 /**
@@ -156,7 +156,7 @@ void learn(int numpatches, int patchsize, int hiddenSize, int epochs, double lea
 
 	// 勾配のチェック
 	/*
-	vector<double> d1 = ae->serializeDerivatives(ae->train(learning_rate));
+	vector<double> d1 = ae->serializeDerivatives(ae->train());
 	vector<double> d2 = ae->serializeDerivatives(ae->computeNumericalGradient());
 
 	for (int i = 0; i < d1.size(); ++i) {
@@ -164,18 +164,18 @@ void learn(int numpatches, int patchsize, int hiddenSize, int epochs, double lea
 	}
 	*/
 
+	/*
 	for (int epoch = 0; epoch < epochs; ++epoch) {
 		Updates updates = ae->train();
 		ae->update(updates, learning_rate);
 		printf("%d: Cost = %lf\n", epoch, updates.cost);
 	}
-
+	*/
 
 
 
 
 	// BFGSを使って最適化
-	/*
     real_1d_array x = ae->serializeParams().c_str();	// 初期値
 
     double epsg = 0;//.0000000001;
@@ -206,7 +206,6 @@ void learn(int numpatches, int patchsize, int hiddenSize, int epochs, double lea
 	} else {
 		printf("Unknown return type: %d\n", rep.terminationtype);
 	}
-	*/
 
 	ae->visualize("weights.png");
 

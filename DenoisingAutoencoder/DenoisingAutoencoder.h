@@ -16,12 +16,12 @@ struct Updates {
 class DenoisingAutoencoder {
 private:
 	const Mat_<double>& data;	// 入力データ (各列が、各観測データ）
-	Mat_<double> tilde_data;	// 破損した入力データ
 	Mat_<double> W1;			// 重み
 	Mat_<double> b1, b2;		// バイアス
 	int M;						// 観測データの数
 	int visibleSize;			// 入力／出力レイヤのユニット数
 	int hiddenSize;				// hiddenレイヤのユニット数
+	double corruption_level;
 
 public:
 	DenoisingAutoencoder(const Mat_<double>& data, int hiddenSize, double corruption_level);
